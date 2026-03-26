@@ -65,6 +65,8 @@ pub enum BleurError {
     GitError(git2::Error),
     #[error("brotha, what on earth makes you want collection more than {0} depths?")]
     AintNoWayThisDeepCollection(u8),
+    #[error("couldn't insert a variable to hashmap")]
+    CouldInsertToMap,
 
     // To be used only if you get despaired.
     // Until so, don't touch, for the sake of your own sanity!

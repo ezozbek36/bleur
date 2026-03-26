@@ -19,15 +19,17 @@ pub struct Variable {
 
 impl Variable {
     pub fn execute(&self, global: &mut HashMap<String, String>) -> Result<()> {
-        let prompt = inquire::Text::new(&self.message)
+        inquire::Text::new(&self.message)
             .with_default(&self.default)
             .with_placeholder(&self.default)
             .prompt()
-            .map_err(Error::CantParseUserPrompt)?;
-
-        global.insert(self.variable.clone(), prompt.clone());
-
-        Ok(())
+            .map_err(Error::CantParseUserPrompt)
+            .and_then(|s| {
+                global
+                    .insert(self.variable.clone(), s)
+                    .map(|_| ())
+                    .ok_or(Error::CouldInsertToMap)
+            })
     }
 }
 
