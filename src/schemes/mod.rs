@@ -4,6 +4,7 @@ pub mod template;
 use crate::schemes::{collections::Collections, template::Template};
 use crate::{Error, Result};
 use std::fs;
+use std::ops::Not;
 use std::path::PathBuf;
 
 static MAX_COLLECTIONS_DEPTH: u8 = 5;
@@ -48,27 +49,25 @@ impl Configuration {
 
     pub fn surely_template(path: PathBuf, depth: u8) -> Result<Self> {
         use Configuration::*;
-
-        if depth > MAX_COLLECTIONS_DEPTH {
-            return Err(Error::AintNoWayThisDeepCollection(depth));
-        }
-
-        match Self::parse(path.clone()) {
-            Template(t) => Ok(Self::Template(t)),
-            Empty => Err(Error::NoTemplateConfiguration),
-            Collections(c) => {
-                let option = inquire::Select::new(
+        depth
+            .gt(&MAX_COLLECTIONS_DEPTH)
+            .not()
+            .then_some(())
+            .ok_or(Error::AintNoWayThisDeepCollection(MAX_COLLECTIONS_DEPTH))
+            .map(|_| path.clone())
+            .map(Self::parse)
+            .and_then(|c| match c {
+                Template(t) => Ok(Self::Template(t)),
+                Empty => Err(Error::NoTemplateConfiguration),
+                Collections(c) => inquire::Select::new(
                     "Choose the template you would like to bootstrap:",
                     c.keys(),
                 )
                 .prompt()
-                .map_err(Error::CantParseUserPrompt)?;
-
-                let option = c.select(option).ok_or(Error::NoSuchTemplateInCollection)?;
-
-                Self::surely_template(option.path(path), depth + 1)
-            }
-        }
+                .map_err(Error::CantParseUserPrompt)
+                .and_then(|s| c.select(s).ok_or(Error::NoSuchTemplateInCollection))
+                .and_then(|c| Self::surely_template(c.path(path), depth + 1)),
+            })
     }
 
     pub fn template(self) -> Result<Template> {

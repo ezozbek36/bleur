@@ -32,7 +32,7 @@ impl Variable {
 }
 
 impl ToTask for Variable {
-    fn to_task(self, path: &Path) -> Task {
+    fn to_task(self, _: &Path) -> Task {
         Task::Variable(Variable {
             message: self.message,
             default: self.default,

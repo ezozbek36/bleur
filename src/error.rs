@@ -8,23 +8,23 @@ pub type Result<T, E = BleurError> = std::result::Result<T, E>;
 #[derive(Error, Debug)]
 pub enum BleurError {
     #[error("can't create temporary directory or copy from temporary: {0}")]
-    TemporaryCantCreate(#[from] std::io::Error),
+    IOError(#[from] std::io::Error),
     #[error("can't parse this shitty url ({0})")]
-    CantParseUrl(#[from] url::ParseError),
+    UrlError(#[from] url::ParseError),
     #[error("can't serialize given data into our type ({0})")]
-    CantParseShit(#[from] serde_json::Error),
-    #[error("you don't have nix nor git for initialization")]
-    NoToolForInit,
-    #[error("we don't have enough of arguments to decide which fetching scheme to use")]
-    InsufficientArgumentsToDecide,
-    #[error("failed while executing a command")]
-    CommandExecutionFail,
+    SerdeJsonError(#[from] serde_json::Error),
     #[error("failed reading output of nix")]
     NixInvalidOutput(#[from] std::string::FromUtf8Error),
     #[error("something went wrong while cloning repository from remote: {0}")]
     CantCloneRepository(#[from] git2::Error),
     #[error("can't download from given url via http: {0}")]
     CantDownloadViaHttp(#[from] reqwest::Error),
+    #[error("you don't have nix nor git for initialization")]
+    NoToolForInit,
+    #[error("we don't have enough of arguments to decide which fetching scheme to use")]
+    InsufficientArgumentsToDecide,
+    #[error("failed while executing a command")]
+    CommandExecutionFail,
     #[error("can't get length of content via http")]
     CantGetContentLength,
     #[error("can't create file to write downloads {0}")]

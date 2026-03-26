@@ -30,22 +30,21 @@ impl ManageBuilder {
     }
 
     pub fn tempdir(self) -> Result<Self> {
-        Ok(Self {
+        tempdir().map_err(Error::IOError).map(|t| Self {
             remote: self.remote,
-            temporary: Some(tempdir().map_err(Error::TemporaryCantCreate)?),
+            temporary: Some(t),
             method: self.method,
         })
     }
 
     pub fn source<T: AsRef<str>>(self, url: T) -> Result<Self> {
-        Ok(Self {
-            temporary: self.temporary,
-            method: self.method,
-            remote: match Url::parse(url.as_ref()) {
-                Ok(l) => Some(l),
-                Err(e) => return Err(Error::CantParseUrl(e)),
-            },
-        })
+        Url::parse(url.as_ref())
+            .map_err(Error::UrlError)
+            .map(|l| Self {
+                temporary: self.temporary,
+                method: self.method,
+                remote: Some(l),
+            })
     }
 
     pub fn fetch_method<T: Methodical>(self, method: T) -> Result<Self> {
@@ -97,9 +96,7 @@ impl Manager {
     }
 
     pub fn instantiate(self) -> Result<Self> {
-        self.method.fetch()?;
-
-        Ok(Self {
+        self.method.fetch().map(|_| Self {
             remote: self.remote,
             temporary: self.temporary,
             method: self.method,
@@ -109,10 +106,8 @@ impl Manager {
     }
 
     pub fn parse(self) -> Result<Self> {
-        let template = Configuration::surely_template(self.temporary.path().to_path_buf(), 1)?;
-
-        Ok(Self {
-            template,
+        Configuration::surely_template(self.temporary.path().to_path_buf(), 1).map(|t| Self {
+            template: t,
             remote: self.remote,
             temporary: self.temporary,
             method: self.method,
@@ -125,9 +120,8 @@ impl Manager {
             .clone()
             .template()?
             .computable()
-            .compute(&mut self.globals)?;
-
-        Ok(self)
+            .compute(&mut self.globals)
+            .map(|_| self)
     }
 
     pub fn recursively_copy(self, destination: PathBuf) -> Result<Self> {

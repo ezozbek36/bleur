@@ -5,52 +5,48 @@ use clap::Parser;
 use std::{env::current_dir, fs::File, io::Write};
 
 fn main() -> Result<()> {
-    run().unwrap_or_else(|e| beautiful_exit(e.to_string()));
-
-    Ok(())
+    run().or_else(|e| beautiful_exit(e.to_string()))
 }
 
 fn run() -> Result<()> {
-    let args = Cli::parse();
-
-    match args.command {
+    match Cli::parse().command {
         Commands::New {
             template,
             path,
             method,
-        } => {
-            let path = path.unwrap_or(current_dir()?);
-
-            manager::ManageBuilder::new()
-                .source(template)
-                .and_then(|mb| mb.tempdir())
-                .and_then(|mb| mb.fetch_method(method))
-                .and_then(|mb| mb.build())
-                .and_then(|m| m.instantiate())
-                .and_then(|m| m.parse())
-                .and_then(|m| m.evaluate())
-                .and_then(|m| m.recursively_copy(path))?;
-        }
-        Commands::Init => {
-            let path = current_dir()?;
-            let mut file = File::create(path.join("bleur.toml"))?;
-
-            let keys = vec!["template", "collection"];
-            let option = inquire::Select::new(
-                "Are you creating a single project template or a collection?",
-                keys,
-            )
-            .prompt()
-            .map_err(Error::CantParseUserPrompt)?;
-
-            let content = match option {
-                "collection" => COLLECTION,
-                _ => TEMPLATE,
-            };
-
-            file.write_all(content.as_bytes())?;
-        }
+        } => path
+            .map_or_else(|| current_dir().map_err(Error::IOError), Ok)
+            .and_then(|p| {
+                manager::ManageBuilder::new()
+                    .source(template)
+                    .and_then(|b| b.tempdir())
+                    .and_then(|b| b.fetch_method(method))
+                    .and_then(|b| b.build())
+                    .and_then(|m| m.instantiate())
+                    .and_then(|m| m.parse())
+                    .and_then(|m| m.evaluate())
+                    .and_then(|m| m.recursively_copy(p))
+            })
+            .map(|_| ()),
+        Commands::Init => current_dir()
+            .map_err(Error::IOError)
+            .and_then(|directory| {
+                File::create(directory.join("bleur.toml")).map_err(Error::IOError)
+            })
+            .and_then(|mut file| {
+                match inquire::Select::new(
+                    "Are you creating a single project template or a collection?",
+                    vec!["template", "collection"],
+                )
+                .prompt()
+                .map_err(Error::CantParseUserPrompt)
+                .map(|choice| match choice {
+                    "collection" => COLLECTION,
+                    _ => TEMPLATE,
+                }) {
+                    Ok(content) => file.write_all(content.as_bytes()).map_err(Error::IOError),
+                    Err(e) => Err(e),
+                }
+            }),
     }
-
-    Ok(())
 }
