@@ -5,16 +5,29 @@ enum Instructions {
     /// Make whole value lowercase
     Lowercase,
 
+    /// Replace chars in string
+    ReplaceAll(String, String),
+
     /// If the function name is not recognized
     Unknown,
 }
 
-impl<T: ToString> From<T> for Instructions {
+impl<T: AsRef<str>> From<T> for Instructions {
     fn from(value: T) -> Self {
-        match value.to_string().to_lowercase().as_str() {
-            "uppercase" => Self::Uppercase,
-            "lowercase" => Self::Lowercase,
-            _ => Self::Unknown,
+        match value.as_ref() {
+            s if s.eq_ignore_ascii_case("uppercase") => Self::Uppercase,
+            s if s.eq_ignore_ascii_case("lowercase") => Self::Lowercase,
+            value => {
+                if let Some((name, args)) = value.split_once(':') {
+                    if name.eq_ignore_ascii_case("replaceAll") {
+                        if let Some((from, to)) = args.split_once("->") {
+                            return Self::ReplaceAll(from.into(), to.into());
+                        }
+                    }
+                }
+
+                Self::Unknown
+            }
         }
     }
 }
@@ -38,6 +51,7 @@ impl Apply {
             |current, instruction| match instruction {
                 Instructions::Uppercase => current.to_uppercase(),
                 Instructions::Lowercase => current.to_lowercase(),
+                Instructions::ReplaceAll(from, to) => current.replace(from, to),
                 Instructions::Unknown => current,
             },
         )
