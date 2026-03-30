@@ -51,10 +51,8 @@ impl Variable {
             .prompt()
             .map_err(Error::CantParseUserPrompt)
             .and_then(|s| {
-                global
-                    .insert(self.variable.clone(), s)
-                    .map(|_| ())
-                    .ok_or(Error::CouldInsertToMap)
+                global.insert(self.variable.clone(), s);
+                Ok(())
             })
     }
 }
