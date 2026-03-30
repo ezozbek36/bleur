@@ -12,10 +12,10 @@ pub enum Task {
     /// Ask for global variables
     Variable(Variable),
 
-    /// Move a file from a place to place
+    /// Change content in a file
     Change(Change),
 
-    /// Change content in a file
+    /// Move a file from a place to place
     Move(Move),
 }
 

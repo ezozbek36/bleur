@@ -20,7 +20,7 @@ pub struct Change {
     /// Where the file is located
     source: PathBuf,
 
-    /// Computatble value which might contain global variables
+    /// Computable value which might contain global variables
     value: String,
 
     /// Functions to apply on value
