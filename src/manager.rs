@@ -11,7 +11,7 @@ use tempfile::{tempdir, TempDir};
 use url::Url;
 
 pub static REGEX: LazyLock<Regex> =
-    LazyLock::new(|| RegexBuilder::new(r"@([a-zA-Z0-9_]+)@").build().unwrap());
+    LazyLock::new(|| RegexBuilder::new(r"@([a-zA-Z0-9-_]+)@").build().unwrap());
 
 #[derive(Default, Debug)]
 pub struct ManageBuilder {
