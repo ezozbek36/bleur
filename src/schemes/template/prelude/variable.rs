@@ -24,11 +24,10 @@ impl Variable {
             .with_placeholder(&self.default)
             .prompt()
             .map_err(Error::CantParseUserPrompt)
-            .and_then(|s| {
+            .map(|s| {
                 global
                     .insert(self.variable.clone(), s)
-                    .map(|_| ())
-                    .ok_or(Error::CouldInsertToMap)
+                    .map_or_else(|| (), |_| ())
             })
     }
 }
