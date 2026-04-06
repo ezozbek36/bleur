@@ -50,9 +50,10 @@ impl Variable {
         inquire_prompt
             .prompt()
             .map_err(Error::CantParseUserPrompt)
-            .and_then(|s| {
-                global.insert(self.variable.clone(), s);
-                Ok(())
+            .map(|s| {
+                global
+                    .insert(self.variable.clone(), s)
+                    .map_or_else(|| (), |_| ())
             })
     }
 }
